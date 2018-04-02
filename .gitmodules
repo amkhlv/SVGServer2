@@ -1,0 +1,3 @@
+[submodule "compute-patch-to/diff-match-patch"]
+	path = compute-patch-to/diff-match-patch
+	url = https://github.com/google/diff-match-patch
