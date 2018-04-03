@@ -18,7 +18,8 @@ data CommonCfg = CommonCfg
   } deriving (Show, Eq)
 
 data InstanceCfg = InstanceCfg
-  { port :: Int
+  { remotePort :: Int
+  , localPort  :: Int
   , dir :: String
   , users :: [String]
   , logFile :: String
@@ -44,11 +45,12 @@ instance XmlPickler InstanceCfg where xpickle = xpInstanceCfg
 xpInstanceCfg :: PU InstanceCfg
 xpInstanceCfg =
   xpElem "config" $
-  xpWrap (\((p, d, u, l)) -> InstanceCfg p d u l ,
+  xpWrap (\((rp, lp, d, u, l)) -> InstanceCfg rp lp d u l ,
            \cf ->
-             (port cf, dir cf, users cf, logFile cf)) $
-  xp4Tuple
-  (xpElem "port" xpInt)
+             (remotePort cf, localPort cf, dir cf, users cf, logFile cf)) $
+  xp5Tuple
+  (xpElem "remotePort" xpInt)
+  (xpElem "localPort" xpInt)  
   (xpElem "dir" xpText)
   (xpElem "users" $ xpList $ xpElem  "user" xpText)
   (xpElem "log" xpText)

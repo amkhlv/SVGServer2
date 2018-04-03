@@ -43,7 +43,7 @@ main = do
   a <- toWaiApp (App {
                     serverProto = proto cfgComm,
                     serverSite = site cfgComm,
-                    serverPort = port cfgInst,
+                    serverPort = remotePort cfgInst,
                     clientId = pack $ googleId cfgComm,
                     clientSecret = pack $ googleSecret cfgComm,
                     httpManager = man,
@@ -53,4 +53,4 @@ main = do
                     Foundation.users = Config.users cfgInst,
                     Foundation.dir = Config.dir cfgInst
                     })
-  runTLS tls (setPort (port cfgInst) defaultSettings) a
+  runTLS tls (setPort (localPort cfgInst) defaultSettings) a
