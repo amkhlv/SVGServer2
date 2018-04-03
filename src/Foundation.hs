@@ -26,6 +26,7 @@ import System.FSNotify
 import Control.Concurrent.STM.TVar
 import Data.Monoid
 import Control.Concurrent (forkIO)
+import System.IO
 
 import WSConduit
 import Watcher
@@ -37,7 +38,7 @@ data App = App {
   clientId :: Text,
   clientSecret :: Text,
   httpManager :: Manager,
-  logFile :: String,
+  logFileHandle :: Handle,
   csrf :: String,
   users :: [String],
   dir :: String
@@ -77,7 +78,10 @@ getHomeR = do
                ( liftIO $
                  putStrLn "=== Unauthorized  user ===" >>
                  putStrLn (">>>" ++ show aid ++  "<<<") >>
-                 putStrLn "=========================="
+                 putStrLn "==========================" >>
+                 hPutStrLn (logFileHandle ysd) "=== Unauthorized  user ===" >>
+                 hPutStrLn (logFileHandle ysd) (">>>" ++ show aid ++  "<<<") >>
+                 hPutStrLn (logFileHandle ysd) "=========================="
                ) >>
                defaultLayout [whamlet| Not authorized |]
              | otherwise -> do
@@ -92,9 +96,9 @@ getHomeR = do
       oldsvg <- liftIO $ newTVarIO ""
       c <- liftIO $ do
         nc <- newChan
-        forkIO $ watchSVGFiles (dir ysd) nc
+        forkIO $ watchSVGFiles (dir ysd) nc (logFileHandle ysd)
         return nc
-      webSockets (runConduit $ sourceWS .| serviceConduit oldsvg c (csrf ysd) (dir ysd)  .| sinkWSText)
+      webSockets (runConduit $ sourceWS .| serviceConduit oldsvg c (csrf ysd) (dir ysd) (logFileHandle ysd) .| sinkWSText)
       defaultLayout
         [whamlet|
                 <div id="svg">  Nothing yet to show   
@@ -115,7 +119,6 @@ getHomeR = do
                       var p = dmp.patch_fromText(mdata.substring(5));
                       var result = dmp.patch_apply(p, prevText);
                       prevText = result[0];
-                      console.log(mdata.substring(5));
                     }
                     s.innerHTML = prevText;
                     conn.send("#{secureOK}");

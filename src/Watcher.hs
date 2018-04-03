@@ -7,10 +7,11 @@ module Watcher
 import System.FSNotify
 import Control.Monad (forever)
 import Control.Concurrent (threadDelay, Chan)
+import System.IO
 
-watchSVGFiles :: String -> Chan Event -> IO ()
-watchSVGFiles d c = withManager $ \mgr -> do
+watchSVGFiles :: String -> Chan Event -> Handle -> IO ()
+watchSVGFiles d c lfh = withManager $ \mgr -> do
   stopWatcher <- watchDirChan mgr d (const True) c
-  putStrLn $ "started listener for folder: " ++ d
+  hPutStrLn lfh $ "started listener for folder: " ++ d
   forever $ threadDelay 1000000
 

@@ -9,6 +9,7 @@ import Network.Wai.Handler.WarpTLS
 import qualified Data.ByteString.Char8 as C8
 import qualified Data.ByteString.Base64 as B64
 import System.Entropy
+import System.IO
 
 import Config
 import Foundation
@@ -32,6 +33,7 @@ main = do
      header "Serve SVG")
   cfgComm <- getCommonConfig $ xmlCommon clops
   cfgInst <- getInstanceConfig $ xmlInstance clops
+  log <- openFile (Config.logFile cfgInst) WriteMode
   rnd <- getEntropy 64
   let token = C8.unpack $ B64.encode rnd
   putStrLn token
@@ -44,7 +46,7 @@ main = do
                     clientId = pack $ googleId cfgComm,
                     clientSecret = pack $ googleSecret cfgComm,
                     httpManager = man,
-                    Foundation.logFile = Config.logFile cfgInst,
+                    logFileHandle = log,
                     csrf = token,
                     Foundation.users = Config.users cfgInst,
                     Foundation.dir = Config.dir cfgInst

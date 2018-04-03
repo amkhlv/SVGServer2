@@ -13,17 +13,18 @@ import           System.Process
 import           GHC.IO.Handle
 import           System.FSNotify
 import           Control.Concurrent (Chan, readChan, threadDelay)
+import           System.IO
 
-serviceConduit :: MonadIO m  => TVar T.Text -> Chan Event -> String -> String -> ConduitT TL.Text TL.Text m ()
-serviceConduit oldsvg ch token d = mapMC $ \x -> case () of
+serviceConduit :: MonadIO m  => TVar T.Text -> Chan Event -> String -> String -> Handle -> ConduitT TL.Text TL.Text m ()
+serviceConduit oldsvg ch token d lfh = mapMC $ \x -> case () of
   () | TL.unpack x == ("INIT" ++ token) -> liftIO $ do
     t <- TLIO.readFile (d ++ "/welcome.svg")
     atomically $ writeTVar oldsvg (TL.toStrict t)
     return (TL.append (TL.pack "FILE\n") t)
   () | TL.unpack x == ("OK" ++ token)   -> liftIO $ do
-    putStrLn "-- waiting for event"
+    hPutStrLn lfh "-- waiting for event" >> hFlush lfh
     ev <- readChan ch
-    putStrLn $ show ev
+    hPutStrLn lfh (show ev) >> hFlush lfh
     threadDelay 300000
     t <- TLIO.readFile (d ++ "/welcome.svg")
     seq (TL.length t) (return ())
@@ -41,13 +42,14 @@ serviceConduit oldsvg ch token d = mapMC $ \x -> case () of
     hClose hin
     e <- hGetContents herr
     putStrLn e
+    hPutStrLn lfh e >> hFlush lfh
     p <- hGetContents hout 
-    putStrLn $ "PATCH>>>" ++ p ++ "<<<PATCH"
+    (length p) `seq` hPutStrLn lfh ("PATCH size = " ++ (show $ length p))
     hClose herr
     hClose hout
     waitForProcess phand
     return (TL.pack $ "PTCH\n" ++ p)
   other -> liftIO $ do
-    putStrLn $ TL.unpack x
-    putStrLn token
+    hPutStrLn lfh $ TL.unpack x
+    putStrLn (TL.unpack x) >> hFlush lfh
     return (TL.pack "FILE ERROR")
