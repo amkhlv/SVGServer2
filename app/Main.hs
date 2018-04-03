@@ -4,7 +4,6 @@ import Options.Applicative
 import Data.Semigroup ((<>))
 import Network.HTTP.Client.Conduit (Manager, newManager)
 import Data.Text
-import Control.Concurrent (threadDelay, newEmptyMVar, putMVar, takeMVar, forkIO, forkOS, newChan, readChan)
 import Network.Wai.Handler.Warp
 import Network.Wai.Handler.WarpTLS
 import qualified Data.ByteString.Char8 as C8
@@ -36,8 +35,6 @@ main = do
   rnd <- getEntropy 64
   let token = C8.unpack $ B64.encode rnd
   putStrLn token
-  c <- newChan
-  watcherID <- forkIO $ watchSVGFiles (Config.dir cfgInst)  c
   man <- newManager
   let tls = tlsSettings (cert cfgComm) (key cfgComm)
   a <- toWaiApp (App {
@@ -47,7 +44,6 @@ main = do
                     clientId = pack $ googleId cfgComm,
                     clientSecret = pack $ googleSecret cfgComm,
                     httpManager = man,
-                    ch = c,
                     Foundation.logFile = Config.logFile cfgInst,
                     csrf = token,
                     Foundation.users = Config.users cfgInst,

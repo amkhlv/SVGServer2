@@ -25,8 +25,11 @@ import Control.Concurrent.Chan
 import System.FSNotify
 import Control.Concurrent.STM.TVar
 import Data.Monoid
+import Control.Concurrent (forkIO)
 
+import Config
 import WSConduit
+import Watcher
 
 data App = App {
   serverProto :: String,
@@ -35,7 +38,6 @@ data App = App {
   clientId :: Text,
   clientSecret :: Text,
   httpManager :: Manager,
-  ch :: Chan Event,
   logFile :: String,
   csrf :: String,
   users :: [String],
@@ -75,7 +77,7 @@ getHomeR = do
     Nothing -> defaultLayout [whamlet|
                                      <a href=@{AuthR LoginR}> Go to the login page
                                      |]
-    Just aid | getAll (mconcat [ All (not $ show aid == x) | x <- users ysd ]) ->
+    Just aid | getAll (mconcat [ All (not $ show aid == x) | x <- Foundation.users ysd ]) ->
                ( liftIO $
                  putStrLn "=== Unauthorized  user ===" >>
                  putStrLn (">>>" ++ show aid ++  "<<<") >>
@@ -92,8 +94,11 @@ getHomeR = do
       let secureINIT = "INIT" ++ (csrf ysd)
       let secureOK = "OK" ++ (csrf ysd)
       oldsvg <- liftIO $ newTVarIO ""
-      -- webSockets (runConduit $ sourceWS .| Data.Conduit.List.map TL.toUpper .| sinkWSText)
-      webSockets (runConduit $ sourceWS .| serviceConduit oldsvg (ch ysd) (csrf ysd) (dir ysd)  .| sinkWSText)
+      c <- liftIO $ do
+        nc <- newChan
+        forkIO $ watchSVGFiles (Foundation.dir ysd) nc
+        return nc
+      webSockets (runConduit $ sourceWS .| serviceConduit oldsvg c (csrf ysd) (Foundation.dir ysd)  .| sinkWSText)
       defaultLayout
         [whamlet|
                 <div id="svg">  Nothing yet to show   
