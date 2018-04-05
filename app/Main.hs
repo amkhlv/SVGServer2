@@ -49,6 +49,7 @@ main = do
                     logFileHandle = log,
                     csrf = token,
                     Foundation.users = Config.users cfgInst,
-                    Foundation.dir = Config.dir cfgInst
+                    Foundation.dir = Config.dir cfgInst,
+                    Foundation.diffProg = Config.diffProg cfgComm
                     })
   runTLS tls (setPort (localPort cfgInst) defaultSettings) a

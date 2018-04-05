@@ -15,40 +15,52 @@ import           System.FSNotify
 import           Control.Concurrent (Chan, readChan, threadDelay)
 import           System.IO
 
-serviceConduit :: MonadIO m  => TVar T.Text -> Chan Event -> String -> String -> Handle -> ConduitT TL.Text TL.Text m ()
-serviceConduit oldsvg ch token d lfh = mapMC $ \x -> case () of
-  () | TL.unpack x == ("INIT" ++ token) -> liftIO $ do
-    t <- TLIO.readFile (d ++ "/welcome.svg")
-    atomically $ writeTVar oldsvg (TL.toStrict t)
-    return (TL.append (TL.pack "FILE\n") t)
+serviceConduit :: MonadIO m  => TVar (Maybe FilePath) -> TVar T.Text -> Chan Event -> String -> String -> Handle -> String -> ConduitT TL.Text TL.Text m ()
+serviceConduit oldpathm oldsvg ch token d lfh diff = mapMC $ \x -> case () of
+  () | TL.unpack x == ("INIT" ++ token) -> return (TL.pack "NOTH\n")
   () | TL.unpack x == ("OK" ++ token)   -> liftIO $ do
     hPutStrLn lfh "-- waiting for event" >> hFlush lfh
     ev <- readChan ch
     hPutStrLn lfh (show ev) >> hFlush lfh
     threadDelay 300000
-    t <- TLIO.readFile (d ++ "/welcome.svg")
-    seq (TL.length t) (return ())
-    (Just hin, Just hout, Just herr, phand) <- createProcess (proc
-                                                             "/usr/local/lib/amkhlv/compute-patch-to"
-                                                             [d ++ "/welcome.svg"])
-                                           {std_in = CreatePipe,
-                                            std_out = CreatePipe,
-                                            std_err = CreatePipe}
-    old <- atomically $ do
-      o <- readTVar oldsvg
-      writeTVar oldsvg (TL.toStrict t)
-      return o
-    hPutStr hin (T.unpack old)
-    hClose hin
-    e <- hGetContents herr
-    putStrLn e
-    hPutStrLn lfh e >> hFlush lfh
-    p <- hGetContents hout 
-    (length p) `seq` hPutStrLn lfh ("PATCH size = " ++ (show $ length p))
-    hClose herr
-    hClose hout
-    waitForProcess phand
-    return (TL.pack $ "PTCH\n" ++ p)
+    let fp = case ev of
+          Added fp _ -> Just fp
+          Modified fp _ -> Just fp
+          Removed fp _  -> Nothing 
+    case fp of
+      Just filepath -> do
+        oldFilePath <- atomically $ do
+          o <- readTVar oldpathm
+          writeTVar oldpathm (Just filepath)
+          return o
+        case oldFilePath of
+          Just oldpath | oldpath == filepath -> do
+            t <- TLIO.readFile filepath
+            seq (TL.length t) (return ())
+            (Just hin, Just hout, Just herr, phand) <- createProcess (proc diff [filepath])
+                                                       {std_in = CreatePipe,
+                                                        std_out = CreatePipe,
+                                                        std_err = CreatePipe}
+            oldContents <- atomically $ do
+              o <- readTVar oldsvg
+              writeTVar oldsvg (TL.toStrict t)
+              return o
+            hPutStr hin (T.unpack oldContents)
+            hClose hin
+            e <- hGetContents herr
+            putStrLn e
+            hPutStrLn lfh e >> hFlush lfh
+            p <- hGetContents hout 
+            (length p) `seq` hPutStrLn lfh ("PATCH size = " ++ (show $ length p))
+            hClose herr
+            hClose hout
+            waitForProcess phand
+            return (TL.pack $ "PTCH\n" ++ p)
+          _ -> do
+            t <- TLIO.readFile filepath
+            atomically $ writeTVar oldsvg (TL.toStrict t)
+            return (TL.append (TL.pack "FILE\n") t)            
+      Nothing -> return (TL.pack "NOTH\n")
   other -> liftIO $ do
     hPutStrLn lfh $ TL.unpack x
     putStrLn (TL.unpack x) >> hFlush lfh

@@ -41,7 +41,8 @@ data App = App {
   logFileHandle :: Handle,
   csrf :: String,
   users :: [String],
-  dir :: String
+  dir :: String,
+  diffProg :: String
   }
 
 mkYesod "App" [parseRoutes| 
@@ -94,11 +95,12 @@ getHomeR = do
       let secureINIT = "INIT" ++ (csrf ysd)
       let secureOK = "OK" ++ (csrf ysd)
       oldsvg <- liftIO $ newTVarIO ""
+      oldpathm <- liftIO $ newTVarIO Nothing
       c <- liftIO $ do
         nc <- newChan
         forkIO $ watchSVGFiles (dir ysd) nc (logFileHandle ysd)
         return nc
-      webSockets (runConduit $ sourceWS .| serviceConduit oldsvg c (csrf ysd) (dir ysd) (logFileHandle ysd) .| sinkWSText)
+      webSockets (runConduit $ sourceWS .| serviceConduit oldpathm oldsvg c (csrf ysd) (dir ysd) (logFileHandle ysd) (diffProg ysd) .| sinkWSText)
       defaultLayout
         [whamlet|
                 <div id="svg">  Nothing yet to show   
