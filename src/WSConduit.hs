@@ -14,14 +14,21 @@ import           GHC.IO.Handle
 import           System.FSNotify
 import           Control.Concurrent (Chan, readChan, threadDelay)
 import           System.IO
+import           Sound.Pulse.Simple
 
-serviceConduit :: MonadIO m  => TVar (Maybe FilePath) -> TVar T.Text -> Chan Event -> String -> String -> Handle -> String -> ConduitT TL.Text TL.Text m ()
-serviceConduit oldpathm oldsvg ch token d lfh diff = mapMC $ \x -> case () of
-  () | TL.unpack x == ("INIT" ++ token) -> return (TL.pack "NOTH\n")
+serviceConduit :: MonadIO m  =>
+  TVar (Maybe FilePath) -> TVar T.Text -> Chan Event -> String -> String -> Handle -> String -> Simple ->
+  ConduitT TL.Text TL.Text m ()
+serviceConduit oldpathm oldsvg ch token d lfh diff beeper = mapMC $ \x -> case () of
+  () | TL.unpack x == ("INIT" ++ token) -> liftIO $ do
+         simpleWrite beeper ([sin $ 2*pi*293*(t/44100)|t<-[1..4410*5]] :: [Float]) >> simpleDrain beeper
+         return (TL.pack "NOTH\n")
   () | TL.unpack x == ("OK" ++ token)   -> liftIO $ do
+    simpleWrite beeper ([sin $ 2*pi*392*(t/44100)|t<-[1..4410*2]] :: [Float]) >> simpleDrain beeper
     hPutStrLn lfh "-- waiting for event" >> hFlush lfh
     ev <- readChan ch
     hPutStrLn lfh (show ev) >> hFlush lfh
+    simpleWrite beeper ([sin $ 2*pi*440*(t/44100)|t<-[1..4410*2]] :: [Float]) >> simpleDrain beeper
     threadDelay 300000
     let fp = case ev of
           Added fp _ -> Just fp
