@@ -27,7 +27,6 @@ import Control.Concurrent.STM.TVar
 import Data.Monoid
 import Control.Concurrent (forkIO)
 import System.IO
-import Sound.Pulse.Simple
 
 import WSConduit
 import Watcher
@@ -43,8 +42,7 @@ data App = App {
   csrf :: String,
   users :: [String],
   dir :: String,
-  diffProg :: String,
-  beeper :: Simple
+  diffProg :: String
   }
 
 mkYesod "App" [parseRoutes| 
@@ -102,7 +100,7 @@ getHomeR = do
         nc <- newChan
         forkIO $ watchSVGFiles (dir ysd) nc (logFileHandle ysd)
         return nc
-      webSockets (runConduit $ sourceWS .| serviceConduit oldpathm oldsvg c (csrf ysd) (dir ysd) (logFileHandle ysd) (diffProg ysd) (beeper ysd) .| sinkWSText)
+      webSockets (runConduit $ sourceWS .| serviceConduit oldpathm oldsvg c (csrf ysd) (dir ysd) (logFileHandle ysd) (diffProg ysd) .| sinkWSText)
       defaultLayout
         [whamlet|
                 <div id="svg">  Nothing yet to show   

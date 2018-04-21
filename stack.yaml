@@ -1,5 +1,5 @@
 flags: {}
 packages:
 - .
-extra-deps: [  pulse-simple-0.1.14 ]
+extra-deps: []
 resolver: lts-11.1

@@ -10,7 +10,6 @@ import qualified Data.ByteString.Char8 as C8
 import qualified Data.ByteString.Base64 as B64
 import System.Entropy
 import System.IO
-import Sound.Pulse.Simple
 
 import Config
 import Foundation
@@ -35,8 +34,6 @@ main = do
   cfgComm <- getCommonConfig $ xmlCommon clops
   cfgInst <- getInstanceConfig $ xmlInstance clops
   log <- openFile (Config.logFile cfgInst) WriteMode
-  bpr <- simpleNew Nothing "SVGServer2" Play Nothing "beeper on SVGServer2"
-    (SampleSpec (F32 LittleEndian) 44100 1) Nothing Nothing
   rnd <- getEntropy 64
   let token = C8.unpack $ B64.encode rnd
   man <- newManager
@@ -52,9 +49,7 @@ main = do
                     csrf = token,
                     Foundation.users = Config.users cfgInst,
                     Foundation.dir = Config.dir cfgInst,
-                    Foundation.diffProg = Config.diffProg cfgComm,
-                    beeper = bpr
+                    Foundation.diffProg = Config.diffProg cfgComm
                     })
   runTLS tls (setPort (localPort cfgInst) defaultSettings) a
-  simpleFree bpr
   hClose log
