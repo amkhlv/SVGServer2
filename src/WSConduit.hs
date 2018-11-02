@@ -23,10 +23,10 @@ serviceConduit oldpathm oldsvg ch token d lfh diff = mapMC $ \x -> case () of
   () | TL.unpack x == ("INIT" ++ token) -> liftIO $ do
          return (TL.pack "NOTH\n")
   () | TL.unpack x == ("OK" ++ token)   -> liftIO $ do
-    hPutStrLn lfh "-- waiting for event --" >> hFlush lfh
-    hPutStrLn lfh "=======================" >> hFlush lfh
+    hPutStrLn lfh "-- READY. Waiting for event --" >> hFlush lfh
+    hPutStrLn lfh "==============================" >> hFlush lfh
     ev <- readChan ch
-    hPutStrLn lfh (show ev) >> hFlush lfh
+    hPutStrLn lfh ("-- detected event: " ++ show ev) >> hFlush lfh
     threadDelay 300000
     let fp = case ev of
           Added fp _ -> Just fp
@@ -52,13 +52,16 @@ serviceConduit oldpathm oldsvg ch token d lfh diff = mapMC $ \x -> case () of
               return o
             hPutStr hin (T.unpack oldContents)
             hClose hin
-            e <- hGetContents herr
-            putStrLn e
-            hPutStrLn lfh e >> hFlush lfh
-            p <- hGetContents hout 
-            (length p) `seq` hPutStrLn lfh ("PATCH size = " ++ (show $ length p))
-            hClose herr
+            hPutStrLn lfh "-- computing patch"
+            hFlush lfh
+            p <- hGetContents hout
+            hPutStrLn lfh ("PATCH size = " ++ (show $ length p))
+            hFlush lfh
             hClose hout
+            e <- hGetContents herr
+            if (length e > 0 ) then hPutStrLn lfh e else hPutStrLn lfh "-- transmitting patch, WAITING for receipt"
+            hFlush lfh
+            hClose herr
             waitForProcess phand
             return (TL.pack $ "PTCH\n" ++ p)
           _ -> do
