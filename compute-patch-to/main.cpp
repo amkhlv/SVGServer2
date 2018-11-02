@@ -1,5 +1,6 @@
 #include <QCoreApplication>
 #include <QTextStream>
+#include <QIODevice>
 #include <QtCore>
 #include <QString>
 #include <QList>
@@ -37,9 +38,11 @@ int main(int argc, char **argv) {
 
    QString strPatch = dmp.patch_toText(dmp.patch_make(old, nu));
 
-   QTextStream(stdout) << strPatch << endl ;
+   QTextStream out(stdout, QIODevice::WriteOnly);
+   out << strPatch << endl ;
+   out.flush();
 
-   //return a.exec();
+   return 0;
  }
 
 
