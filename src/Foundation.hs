@@ -6,15 +6,17 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE QuasiQuotes           #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 module Foundation where
 
 import Yesod
 import Yesod.Core
 import Yesod.Auth
-import Yesod.Auth.GoogleEmail2
+import Yesod.Auth.OAuth2 (getAccessToken, getUserResponseJSON)
+import Yesod.Auth.OAuth2.Google
+import Yesod.Auth.OAuth2.Prelude (AccessToken)
 import Yesod.WebSockets
-import Data.Text
 import Network.HTTP.Conduit (Manager, newManager)
 import Yesod.Form.Fields
 import qualified Data.Text.Lazy as TL
@@ -27,6 +29,7 @@ import Control.Concurrent.STM.TVar
 import Data.Monoid
 import Control.Concurrent (forkIO)
 import System.IO
+import GHC.Generics
 
 import WSConduit
 import Watcher
@@ -52,17 +55,27 @@ mkYesod "App" [parseRoutes|
 
 instance Yesod App where
   approot = ApprootMaster $ \x ->
-    pack $ serverProto x ++ "://" ++ serverSite x ++ ":" ++ (show $ serverPort x)
+    pack $ serverProto x ++ "://" ++ serverSite x ++ ":" ++ show (serverPort x)
 --  approot = ApprootStatic "http://localhost:3000"
+
+data GoogleUser
+    = GoogleUser
+    { name :: Text
+    , email :: Text
+    } deriving Generic
+instance FromJSON GoogleUser
 
 instance YesodAuth App where
   type AuthId App = Text
-  getAuthId = return . Just . credsIdent
+  getAuthId creds = case getUserResponseJSON creds of
+    Right (GoogleUser nm eml) -> do
+      setSession "_GMAIL" eml
+      return $ Just eml
   loginDest _ = HomeR
   logoutDest _ = HomeR
-  authPlugins x = [ authGoogleEmail (clientId x) (clientSecret x) ]
+  authPlugins x = [ oauth2GoogleScoped ["email", "profile"] (clientId x) (clientSecret x) ]
   authHttpManager = getsYesod httpManager
-  maybeAuthId = lookupSession "_ID"
+  maybeAuthId = lookupSession "_GMAIL"
 
 instance RenderMessage App FormMessage where
   renderMessage _ _ = defaultFormMessage
@@ -73,18 +86,17 @@ getHomeR = do
   maid <- maybeAuthId
   case maid of
     Nothing -> defaultLayout [whamlet|
-                                     <a href=@{AuthR LoginR}> Go to the login page
+                                     <a href=@{AuthR LoginR} style="font-size:28pt"> Go to the login page
                                      |]
-    Just aid | getAll (mconcat [ All (not $ show aid == x) | x <- users ysd ]) ->
-               ( liftIO $
+    Just aid | getAll (mconcat [ All (show aid /= x) | x <- users ysd ]) ->
+               liftIO (
                  putStrLn "=== Unauthorized  user ===" >>
                  putStrLn (">>>" ++ show aid ++  "<<<") >>
                  putStrLn "==========================" >>
                  hPutStrLn (logFileHandle ysd) "=== Unauthorized  user ===" >>
                  hPutStrLn (logFileHandle ysd) (">>>" ++ show aid ++  "<<<") >>
                  hPutStrLn (logFileHandle ysd) "=========================="
-               ) >>
-               defaultLayout [whamlet| Not authorized |]
+                       ) >> defaultLayout [whamlet| User >>>#{show aid}<<< NOT AUTHORIZED |]
              | otherwise -> do
       let site = serverSite ysd
       let port = show $ serverPort ysd
@@ -92,8 +104,8 @@ getHomeR = do
             "http"  -> "ws" :: String
             "https" -> "wss" :: String
       let wsurl = ws ++ "://" ++ site ++ ":" ++ port
-      let secureINIT = "INIT" ++ (csrf ysd)
-      let secureOK = "OK" ++ (csrf ysd)
+      let secureINIT = "INIT" ++ csrf ysd
+      let secureOK = "OK" ++ csrf ysd
       oldsvg <- liftIO $ newTVarIO ""
       oldpathm <- liftIO $ newTVarIO Nothing
       c <- liftIO $ do

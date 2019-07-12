@@ -29,9 +29,9 @@ serviceConduit oldpathm oldsvg ch token d lfh diff = mapMC $ \x -> case () of
     hPutStrLn lfh ("-- detected event: " ++ show ev) >> hFlush lfh
     threadDelay 300000
     let fp = case ev of
-          Added fp _ -> Just fp
-          Modified fp _ -> Just fp
-          Removed fp _  -> Nothing 
+          Added fp _ _ -> Just fp
+          Modified fp _ _ -> Just fp
+          Removed fp _ _ -> Nothing
     case fp of
       Just filepath -> do
         oldFilePath <- atomically $ do
