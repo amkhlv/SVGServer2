@@ -15,16 +15,24 @@ Does not require installation on the receiving end.
 
 ## Copy executable:
 
-    cp .stack-work/dist/x86_64-linux-nopie/Cabal-2.0.1.0/build/svgserver2/svgserver2 /usr/local/bin/
+    stack install
 
 ## C++ setup
+
+First install build tools. For example, on Debian:
+
+    aptitude install qt4-qmake libqt4-dev
+
+then build:
 
     mkdir build
     cd build
     qmake -qt=qt4  -makefile ../compute-patch-to/
     make
 
-The resulting executable `compute-patch-to` should be copied somewere; its location should be put in `common.xml` under `<diffprog>`.
+The resulting executable `compute-patch-to` should be copied somewere; 
+its location should be put in `common.xml` under `<diffprog>`
+(see [Configuration files](#configuration-files))
 
 # Certificates preparation
 
@@ -41,20 +49,19 @@ The resulting executable `compute-patch-to` should be copied somewere; its locat
 
     [Unit]
     Description=SVGServer2 for %i
-
+    
     [Service]
-    WorkingDirectory= /var/www/svgserver2/%i
-    ExecStart= /usr/local/bin/svgserver2 -c /var/www/svgserver2/common.xml -i /var/www/svgserver2/%i/instance.xml
+    WorkingDirectory= /home/www-data/svgserver2/%i
+    ExecStart=/usr/local/bin/svgserver2 -c /home/www-data/svgserver2/common.xml -i /home/www-data/svgserver2/%i/instance.xml
     PIDFile=/tmp/svgserver2_%i.pid
     User=www-data
-
+    
     [Install]
     WantedBy=multi-user.target
 
 ## Port forwarding
 
     ssh -R 11111:localhost:11111  myserver.com
-
 
 # Configuration files
 
@@ -68,8 +75,8 @@ Sample configuration files:
       <GoogleClientID>■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■</GoogleClientID>
       <GoogleClientSecret>■■■■■■■■■■■■■■■■■■■■■■■■■■■</GoogleClientSecret>
       <diffprog>/usr/local/lib/amkhlv/compute-patch-to</diffprog>
-      <cert>/var/www/svgserver2/certificate.pem</cert>
-      <key>/var/www/svgserver2/key.pem</key>
+      <cert>/home/www-data/svgserver2/certificate.pem</cert>
+      <key>/home/www-data/svgserver2/key.pem</key>
     </config>
 
 ## instance.xml
@@ -77,7 +84,7 @@ Sample configuration files:
     <config>
       <remotePort>11111</remotePort>
       <localPort>11111</localPort>
-      <dir>/var/www/svgserver2/Example/svgs</dir>
+      <dir>/home/www-data/svgserver2/Example/svgs</dir>
       <users><user>"a.mkhlv@gmail.com"</user></users>
-      <log>/var/www/svgserver2/Example/log.txt</log>
+      <log>/home/www-data/svgserver2/Example/log.txt</log>
     </config>
