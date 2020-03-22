@@ -39,8 +39,7 @@ int main(int argc, char **argv) {
    QString strPatch = dmp.patch_toText(dmp.patch_make(old, nu));
 
    QTextStream out(stdout, QIODevice::WriteOnly);
-   out << strPatch << endl ;
-   out.flush();
+   out << strPatch << flush ;
 
    return 0;
  }
