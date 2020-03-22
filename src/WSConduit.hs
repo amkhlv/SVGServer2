@@ -29,8 +29,12 @@ serviceConduit oldpathm oldsvg ch token d lfh diff = mapMC $ \x -> case () of
     hPutStrLn lfh ("-- detected event: " ++ show ev) >> hFlush lfh
     threadDelay 300000
     let fp = case ev of
-          Added fp _ _ -> Just fp
-          Modified fp _ _ -> Just fp
+          Added fp _ _ -> case (reverse . take 4 $ reverse fp) of
+            ".svg" -> Just fp
+            _ -> Nothing
+          Modified fp _ _ -> case (reverse . take 4 $ reverse fp) of 
+            ".svg" -> Just fp
+            _ -> Nothing
           Removed fp _ _ -> Nothing
     case fp of
       Just filepath -> do

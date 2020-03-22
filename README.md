@@ -63,6 +63,8 @@ its location should be put in `common.xml` under `<diffprog>`
 
     ssh -R 11111:localhost:11111  myserver.com
 
+--- dont forget `GatewayPorts yes` in `/etc/ssh/sshd_config` !
+
 # Configuration files
 
 Sample configuration files:
