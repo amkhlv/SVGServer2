@@ -19,7 +19,12 @@ Does not require installation on the receiving end.
 
 ## C++ setup
 
-First install build tools. For example, on Debian:
+First we need to get diff-match-patch submodule:
+
+    git submodule init
+    git submodule update
+
+First install build tools. For example, on Debian, as root:
 
     aptitude install qt4-qmake libqt4-dev
 
