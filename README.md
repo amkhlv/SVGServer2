@@ -1,23 +1,25 @@
-# Description
+# SVGServer2
+
+## Description
 
 A program for showing SVG whiteboard on a website. Similar to [MathPump](https://github.com/amkhlv/mathpump3) but one-way only.
 Does not require installation on the receiving end.
 
 
-# Setup
+## Setup
 
-## Haskell setup
+### Haskell setup
 
 1. [install Stack](https://haskell-lang.org/get-started)
 	* On POSIX systems, this is usually `curl -sSL https://get.haskellstack.org/ | sh`
 2. Install GHC: `stack setup`
 3. Build libraries: `stack build`
 
-## Copy executable:
+### Copy executable:
 
     stack install
 
-## C++ setup
+### C++ setup
 
 First we need to get diff-match-patch submodule:
 
@@ -39,7 +41,7 @@ The resulting executable `compute-patch-to` should be copied somewere;
 its location should be put in `common.xml` under `<diffprog>`
 (see [Configuration files](#configuration-files))
 
-# Certificates preparation
+## Certificates preparation
 
     openssl genrsa -out key.pem 2048
     openssl req -new -key key.pem -out certificate.csr
@@ -48,9 +50,9 @@ its location should be put in `common.xml` under `<diffprog>`
 
     openssl x509 -req -in certificate.csr -signkey key.pem -out certificate.pem
 
-# Invocation
+## Invocation
 
-## Sample `systemd` unit:
+### Sample `systemd` unit
 
     [Unit]
     Description=SVGServer2 for %i
@@ -64,17 +66,34 @@ its location should be put in `common.xml` under `<diffprog>`
     [Install]
     WantedBy=multi-user.target
 
-## Port forwarding
+### Port forwarding
 
     ssh -R 11111:localhost:11111  myserver.com
 
 --- dont forget `GatewayPorts yes` in `/etc/ssh/sshd_config` !
 
-# Configuration files
+### Nginx
+
+    location /lecture/ws {
+            rewrite /lecture/ws /  break;
+            proxy_pass https://localhost:11111;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+        proxy_read_timeout 3600s;
+        }
+    # serve assets or request page from proxy (if asset not found)
+    location /aula {
+            rewrite /lecture(.*) $1  break;
+            proxy_pass https://localhost:11111;
+    }
+    }
+
+## Configuration files
 
 Sample configuration files:
 
-## common.xml
+### common.xml
 
     <config>
       <proto>https</proto>
@@ -86,10 +105,11 @@ Sample configuration files:
       <key>/home/www-data/svgserver2/key.pem</key>
     </config>
 
-## instance.xml
+### instance.xml
 
     <config>
-      <remotePort>11111</remotePort>
+      <remotePort>443</remotePort>
+      <urlPath>/lecture</urlPath>
       <localPort>11111</localPort>
       <dir>/home/www-data/svgserver2/Example/svgs</dir>
       <users><user>"a.mkhlv@gmail.com"</user></users>

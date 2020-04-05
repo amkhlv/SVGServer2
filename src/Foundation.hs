@@ -38,6 +38,7 @@ data App = App {
   serverProto :: String,
   serverSite :: String,
   serverPort :: Int,
+  serverURLPath :: String,
   clientId :: Text,
   clientSecret :: Text,
   httpManager :: Manager,
@@ -55,7 +56,7 @@ mkYesod "App" [parseRoutes|
 
 instance Yesod App where
   approot = ApprootMaster $ \x ->
-    pack $ serverProto x ++ "://" ++ serverSite x ++ ":" ++ show (serverPort x)
+    pack $ serverProto x ++ "://" ++ serverSite x ++ ":" ++ show (serverPort x) ++ serverURLPath x
 --  approot = ApprootStatic "http://localhost:3000"
 
 data GoogleUser
@@ -100,10 +101,11 @@ getHomeR = do
              | otherwise -> do
       let site = serverSite ysd
       let port = show $ serverPort ysd
+      let path = serverURLPath ysd
       let ws   = case serverProto ysd of
             "http"  -> "ws" :: String
             "https" -> "wss" :: String
-      let wsurl = ws ++ "://" ++ site ++ ":" ++ port
+      let wsurl = ws ++ "://" ++ site ++ ":" ++ port ++ path ++ "/ws"
       let secureINIT = "INIT" ++ csrf ysd
       let secureOK = "OK" ++ csrf ysd
       oldsvg <- liftIO $ newTVarIO ""

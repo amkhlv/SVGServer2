@@ -42,6 +42,7 @@ main = do
                     serverProto = proto cfgComm,
                     serverSite = site cfgComm,
                     serverPort = remotePort cfgInst,
+                    serverURLPath = urlPath cfgInst,
                     clientId = pack $ googleId cfgComm,
                     clientSecret = pack $ googleSecret cfgComm,
                     httpManager = man,

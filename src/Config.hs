@@ -19,6 +19,7 @@ data CommonCfg = CommonCfg
 
 data InstanceCfg = InstanceCfg
   { remotePort :: Int
+  , urlPath :: String
   , localPort  :: Int
   , dir :: String
   , users :: [String]
@@ -45,11 +46,12 @@ instance XmlPickler InstanceCfg where xpickle = xpInstanceCfg
 xpInstanceCfg :: PU InstanceCfg
 xpInstanceCfg =
   xpElem "config" $
-  xpWrap (\((rp, lp, d, u, l)) -> InstanceCfg rp lp d u l ,
+  xpWrap (\((rp, up, lp, d, u, l)) -> InstanceCfg rp up lp d u l ,
            \cf ->
-             (remotePort cf, localPort cf, dir cf, users cf, logFile cf)) $
-  xp5Tuple
+             (remotePort cf, urlPath cf, localPort cf, dir cf, users cf, logFile cf)) $
+  xp6Tuple
   (xpElem "remotePort" xpInt)
+  (xpElem "urlPath" xpText)
   (xpElem "localPort" xpInt)  
   (xpElem "dir" xpText)
   (xpElem "users" $ xpList $ xpElem  "user" xpText)
