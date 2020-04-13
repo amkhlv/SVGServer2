@@ -115,3 +115,8 @@ Sample configuration files:
       <users><user>"a.mkhlv@gmail.com"</user></users>
       <log>/home/www-data/svgserver2/Example/log.txt</log>
     </config>
+
+## Audio channel
+
+One way audio streaming can, in principle, be done
+[by VLC](https://github.com/amkhlv/usr/blob/master/share/notes/audio-video/VLC.md)
