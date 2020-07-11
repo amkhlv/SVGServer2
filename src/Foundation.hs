@@ -138,7 +138,7 @@ getHomeR = do
         Nothing -> defaultLayout [whamlet|
                                          <a href=@{AuthR LoginR} style="font-size:28pt"> Go to the login page
                                          |]
-        Just aid | getAll (mconcat [ All (show aid /= x) | x <- users ysd ]) ->
+        Just aid | getAll (mconcat [ All (aid /= pack x) | x <- users ysd ]) ->
                    liftIO (
                      putStrLn "=== Unauthorized  user ===" >>
                      putStrLn (">>>" ++ show aid ++  "<<<") >>

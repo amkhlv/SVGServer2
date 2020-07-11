@@ -112,7 +112,7 @@ Sample configuration files:
       <urlPath>/lecture</urlPath>
       <localPort>11111</localPort>
       <dir>/home/www-data/svgserver2/Example/svgs</dir>
-      <users><user>"a.mkhlv@gmail.com"</user></users>
+      <users><user>a.mkhlv@gmail.com</user></users>
       <log>/home/www-data/svgserver2/Example/log.txt</log>
     </config>
 
