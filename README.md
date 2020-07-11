@@ -116,6 +116,8 @@ Sample configuration files:
       <log>/home/www-data/svgserver2/Example/log.txt</log>
     </config>
 
+When an element `<isPublic></isPublic>` is present in `instance.xml`, the access restriction is disabled (program does not ask to login).
+
 ## Audio channel
 
 One way audio streaming can, in principle, be done

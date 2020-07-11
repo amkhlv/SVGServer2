@@ -4,6 +4,7 @@ import Options.Applicative
 import Data.Semigroup ((<>))
 import Network.HTTP.Client.Conduit (Manager, newManager)
 import Data.Text
+import Data.Maybe (isJust)
 import Network.Wai.Handler.Warp
 import Network.Wai.Handler.WarpTLS
 import qualified Data.ByteString.Char8 as C8
@@ -48,6 +49,7 @@ main = do
                     httpManager = man,
                     logFileHandle = log,
                     csrf = token,
+                    Foundation.isPublic = isJust $ Config.isPublic cfgInst,
                     Foundation.users = Config.users cfgInst,
                     Foundation.dir = Config.dir cfgInst,
                     Foundation.diffProg = Config.diffProg cfgComm

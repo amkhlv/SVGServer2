@@ -22,6 +22,7 @@ data InstanceCfg = InstanceCfg
   , urlPath :: String
   , localPort  :: Int
   , dir :: String
+  , isPublic :: Maybe ()
   , users :: [String]
   , logFile :: String
   } deriving (Show, Eq)
@@ -46,14 +47,15 @@ instance XmlPickler InstanceCfg where xpickle = xpInstanceCfg
 xpInstanceCfg :: PU InstanceCfg
 xpInstanceCfg =
   xpElem "config" $
-  xpWrap (\((rp, up, lp, d, u, l)) -> InstanceCfg rp up lp d u l ,
+  xpWrap (\((rp, up, lp, d, p, u, l)) -> InstanceCfg rp up lp d p u l ,
            \cf ->
-             (remotePort cf, urlPath cf, localPort cf, dir cf, users cf, logFile cf)) $
-  xp6Tuple
+             (remotePort cf, urlPath cf, localPort cf, dir cf, isPublic cf, users cf, logFile cf)) $
+  xp7Tuple
   (xpElem "remotePort" xpInt)
   (xpElem "urlPath" xpText)
   (xpElem "localPort" xpInt)  
   (xpElem "dir" xpText)
+  (xpOption $ xpElem "isPublic" $ xpLift ())
   (xpElem "users" $ xpList $ xpElem  "user" xpText)
   (xpElem "log" xpText)
 

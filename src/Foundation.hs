@@ -44,6 +44,7 @@ data App = App {
   httpManager :: Manager,
   logFileHandle :: Handle,
   csrf :: String,
+  isPublic :: Bool,
   users :: [String],
   dir :: String,
   diffProg :: String
@@ -81,24 +82,8 @@ instance YesodAuth App where
 instance RenderMessage App FormMessage where
   renderMessage _ _ = defaultFormMessage
 
-getHomeR :: Handler Html
-getHomeR = do
-  ysd <- getYesod
-  maid <- maybeAuthId
-  case maid of
-    Nothing -> defaultLayout [whamlet|
-                                     <a href=@{AuthR LoginR} style="font-size:28pt"> Go to the login page
-                                     |]
-    Just aid | getAll (mconcat [ All (show aid /= x) | x <- users ysd ]) ->
-               liftIO (
-                 putStrLn "=== Unauthorized  user ===" >>
-                 putStrLn (">>>" ++ show aid ++  "<<<") >>
-                 putStrLn "==========================" >>
-                 hPutStrLn (logFileHandle ysd) "=== Unauthorized  user ===" >>
-                 hPutStrLn (logFileHandle ysd) (">>>" ++ show aid ++  "<<<") >>
-                 hPutStrLn (logFileHandle ysd) "=========================="
-                       ) >> defaultLayout [whamlet| User >>>#{show aid}<<< NOT AUTHORIZED |]
-             | otherwise -> do
+giveSock :: App -> Handler Html
+giveSock ysd = do
       let site = serverSite ysd
       let port = show $ serverPort ysd
       let path = serverURLPath ysd
@@ -140,5 +125,28 @@ getHomeR = do
                     conn.send("#{secureOK}");
                   }
                 |]
+  
+
+getHomeR :: Handler Html
+getHomeR = do
+  ysd <- getYesod
+  maid <- maybeAuthId
+  if isPublic ysd
+    then giveSock ysd
+    else
+      case maid of
+        Nothing -> defaultLayout [whamlet|
+                                         <a href=@{AuthR LoginR} style="font-size:28pt"> Go to the login page
+                                         |]
+        Just aid | getAll (mconcat [ All (show aid /= x) | x <- users ysd ]) ->
+                   liftIO (
+                     putStrLn "=== Unauthorized  user ===" >>
+                     putStrLn (">>>" ++ show aid ++  "<<<") >>
+                     putStrLn "==========================" >>
+                     hPutStrLn (logFileHandle ysd) "=== Unauthorized  user ===" >>
+                     hPutStrLn (logFileHandle ysd) (">>>" ++ show aid ++  "<<<") >>
+                     hPutStrLn (logFileHandle ysd) "=========================="
+                           ) >> defaultLayout [whamlet| User >>>#{show aid}<<< NOT AUTHORIZED |]
+                 | otherwise -> giveSock ysd
 
         
