@@ -74,8 +74,8 @@ its location should be put in `common.xml` under `<diffprog>`
 
 ### Nginx
 
-    location /lecture/ws {
-            rewrite /lecture/ws /  break;
+    location /talk/ws {
+            rewrite /talk/ws /  break;
             proxy_pass https://localhost:11111;
             proxy_http_version 1.1;
             proxy_set_header Upgrade $http_upgrade;
@@ -83,8 +83,8 @@ its location should be put in `common.xml` under `<diffprog>`
         proxy_read_timeout 3600s;
         }
     # serve assets or request page from proxy (if asset not found)
-    location /aula {
-            rewrite /lecture(.*) $1  break;
+    location /talk {
+            rewrite /talk(.*) $1  break;
             proxy_pass https://localhost:11111;
     }
     }
