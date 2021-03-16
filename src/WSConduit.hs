@@ -22,6 +22,18 @@ serviceConduit :: MonadIO m  =>
 serviceConduit oldpathm oldsvg ch token d lfh diff = mapMC $ \x -> case () of
   () | TL.unpack x == ("INIT" ++ token) -> liftIO $ do
          return (TL.pack "NOTH\n")
+  () | TL.unpack x == ("ERROR" ++ token) -> liftIO $ do
+    hPutStrLn lfh "-- client detected ERROR, resending file --" >> hFlush lfh
+    oldFilePath <- atomically $ do
+      o <- readTVar oldpathm
+      return o
+    case oldFilePath of
+      Just ofp -> do
+        hPutStrLn lfh "-- FILE --" >> hFlush lfh
+        t <- TLIO.readFile ofp
+        return (TL.append (TL.pack "FILE\n") t)            
+      Nothing -> 
+        return (TL.pack "NOTH\n")
   () | TL.unpack x == ("OK" ++ token)   -> liftIO $ do
     hPutStrLn lfh "-- READY. Waiting for event --" >> hFlush lfh
     hPutStrLn lfh "==============================" >> hFlush lfh

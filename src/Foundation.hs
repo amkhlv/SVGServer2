@@ -84,49 +84,65 @@ instance RenderMessage App FormMessage where
 
 giveSock :: App -> Handler Html
 giveSock ysd = do
-      let site = serverSite ysd
-      let port = show $ serverPort ysd
-      let path = serverURLPath ysd
-      let ws   = case serverProto ysd of
-            "http"  -> "ws" :: String
-            "https" -> "wss" :: String
-      let wsurl = ws ++ "://" ++ site ++ ":" ++ port ++ path ++ "/ws"
-      let secureINIT = "INIT" ++ csrf ysd
-      let secureOK = "OK" ++ csrf ysd
-      oldsvg <- liftIO $ newTVarIO ""
-      oldpathm <- liftIO $ newTVarIO Nothing
-      c <- liftIO $ do
-        nc <- newChan
-        forkIO $ watchSVGFiles (dir ysd) nc (logFileHandle ysd)
-        return nc
-      webSockets (runConduit $ sourceWS .| serviceConduit oldpathm oldsvg c (csrf ysd) (dir ysd) (logFileHandle ysd) (diffProg ysd) .| sinkWSText)
-      defaultLayout
-        [whamlet|
-                <div id="svg">  Nothing yet to show   
-                
-                <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/diff_match_patch/20121119/diff_match_patch.js">
-                
-                <script type="text/javascript">
-                  var prevText = "";
-                  var dmp = new diff_match_patch();
-                  var s = document.getElementById("svg");
-                  var conn = new WebSocket("#{wsurl}");
-                  conn.onopen = function(event) { conn.send("#{secureINIT}"); }
-                  conn.onmessage = function(message){
-                    var mdata = message.data ;
-                    if (mdata.substring(0,4) === "FILE") {
-                      prevText = mdata.substring(5);
-                    } else if (mdata.substring(0,4) === "PTCH") {
-                      var p = dmp.patch_fromText(mdata.substring(5));
-                      var result = dmp.patch_apply(p, prevText);
-                      prevText = result[0];
-                    }
+  let site = serverSite ysd
+  let port = show $ serverPort ysd
+  let path = serverURLPath ysd
+  let ws   = case serverProto ysd of
+        "http"  -> "ws" :: String
+        "https" -> "wss" :: String
+  let wsurl = ws ++ "://" ++ site ++ ":" ++ port ++ path ++ "/ws"
+  let secureINIT = "INIT" ++ csrf ysd
+  let secureOK = "OK" ++ csrf ysd
+  let secureERROR = "ERROR" ++ csrf ysd
+  oldsvg <- liftIO $ newTVarIO ""
+  oldpathm <- liftIO $ newTVarIO Nothing
+  c <- liftIO $ do
+    nc <- newChan
+    forkIO $ watchSVGFiles (dir ysd) nc (logFileHandle ysd)
+    return nc
+  webSockets (runConduit $ sourceWS .| serviceConduit oldpathm oldsvg c (csrf ysd) (dir ysd) (logFileHandle ysd) (diffProg ysd) .| sinkWSText)
+  defaultLayout
+    [whamlet|
+            <div id="svg">  Nothing yet to show   
+            <button id="resend">Repair
+            
+            <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/diff_match_patch/20121119/diff_match_patch.js">
+            
+            <script type="text/javascript">
+              var prevText = "";
+              var dmp = new diff_match_patch();
+              var s = document.getElementById("svg");
+              var conn = new WebSocket("#{wsurl}");
+              document.getElementById("resend").onclick = function() { conn.send("#{secureERROR}"); };
+              conn.onopen = function(event) { conn.send("#{secureINIT}"); }
+              conn.onmessage = function(message){
+                var mdata = message.data ;
+                if (mdata.substring(0,4) === "FILE") {
+                  prevText = mdata.substring(5);
+                  s.innerHTML = prevText;
+                  console.log("Got FILE");
+                  conn.send("#{secureOK}");
+                } else if (mdata.substring(0,4) === "PTCH") {
+                  console.log("Got PATCH");
+                  var p = dmp.patch_fromText(mdata.substring(5));
+                  var result = dmp.patch_apply(p, prevText);
+                  var statuses = result.slice(1);
+                  console.log(statuses.map(function(r) { return r.toString(); }).join("*"));
+                  if (statuses.reduce(function(acc,x) { return acc && x ; },  true)) {
+                    prevText = result[0];
                     s.innerHTML = prevText;
                     conn.send("#{secureOK}");
+                  } else {
+                    console.log("ERROR patching");
+                    conn.send("#{secureERROR}");
                   }
-                |]
+                } else {
+                    console.log(`Got ${mdata.substring(0,4)}`);
+                    conn.send("#{secureOK}");
+                }
+              }
+            |]
   
-
 getHomeR :: Handler Html
 getHomeR = do
   ysd <- getYesod
