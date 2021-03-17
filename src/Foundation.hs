@@ -103,16 +103,21 @@ giveSock ysd = do
   webSockets (runConduit $ sourceWS .| serviceConduit oldpathm oldsvg c (csrf ysd) (dir ysd) (logFileHandle ysd) (diffProg ysd) .| sinkWSText)
   defaultLayout
     [whamlet|
-            <div id="svg">  Nothing yet to show   
             <button id="resend">Repair
+            <span id="led_r">⬤
+            <span id="led_g">⬤
+
+            <div id="svg">  Nothing yet to show   
             
             <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/diff_match_patch/20121119/diff_match_patch.js">
             
             <script type="text/javascript">
               var prevText = "";
+              var green = 0;
               var dmp = new diff_match_patch();
               var s = document.getElementById("svg");
               var conn = new WebSocket("#{wsurl}");
+              const parser = new DOMParser();
               document.getElementById("resend").onclick = function() { conn.send("#{secureERROR}"); };
               conn.onopen = function(event) { conn.send("#{secureINIT}"); }
               conn.onmessage = function(message){
@@ -121,6 +126,7 @@ giveSock ysd = do
                   prevText = mdata.substring(5);
                   s.innerHTML = prevText;
                   console.log("Got FILE");
+                  document.getElementById("led_r").style.color = "darkorange";
                   conn.send("#{secureOK}");
                 } else if (mdata.substring(0,4) === "PTCH") {
                   console.log("Got PATCH");
@@ -130,14 +136,25 @@ giveSock ysd = do
                   console.log(statuses.map(function(r) { return r.toString(); }).join("*"));
                   if (statuses.reduce(function(acc,x) { return acc && x ; },  true)) {
                     prevText = result[0];
-                    s.innerHTML = prevText;
+                    const dom = parser.parseFromString(prevText, "application/xml");
+                    if (dom.documentElement.nodeName == "parsererror") {
+                      console.log("incomplete");
+                    } else {
+                      console.log(dom.documentElement.nodeName);
+                      s.innerHTML = prevText;
+                    }
+                    green = (green + 125) % 256;
+                    document.getElementById("led_g").style.color = `rgb(0,${green},0)`;
+                    document.getElementById("led_r").style.color = "black";
                     conn.send("#{secureOK}");
                   } else {
                     console.log("ERROR patching");
+                    document.getElementById("led_r").style.color = "red";
                     conn.send("#{secureERROR}");
                   }
                 } else {
                     console.log(`Got ${mdata.substring(0,4)}`);
+                    document.getElementById("led_r").style.color = "blue";
                     conn.send("#{secureOK}");
                 }
               }

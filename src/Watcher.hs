@@ -13,5 +13,5 @@ watchSVGFiles :: String -> Chan Event -> Handle -> IO ()
 watchSVGFiles d c lfh = withManager $ \mgr -> do
   stopWatcher <- watchDirChan mgr d (const True) c
   hPutStrLn lfh $ "started listener for folder: " ++ d
-  forever $ threadDelay 1000000
+  forever $ threadDelay 100000
 
