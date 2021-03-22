@@ -87,7 +87,6 @@ its location should be put in `common.xml` under `<diffprog>`
             rewrite /talk(.*) $1  break;
             proxy_pass https://localhost:11111;
     }
-    }
 
 ## Configuration files
 
