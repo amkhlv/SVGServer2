@@ -117,6 +117,12 @@ Sample configuration files:
 
 When an element `<isPublic></isPublic>` is present in `instance.xml`, the access restriction is disabled (program does not ask to login).
 
+## Using Inkscape
+
+Inkscape may be confusing. I have a [separate writeup on Inkscape](https://github.com/amkhlv/mathpump3/blob/master/docs/inkscape.md).
+Please __do read it__, unless if you are a top expert in Inkscape.
+
+
 ## Audio channel
 
 One way audio streaming can, in principle, be done
