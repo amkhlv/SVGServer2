@@ -139,14 +139,16 @@ giveSock ysd = do
                     const dom = parser.parseFromString(prevText, "application/xml");
                     if (dom.documentElement.nodeName == "parsererror") {
                       console.log("incomplete");
+                      document.getElementById("led_r").style.color = "red";
+                      conn.send("#{secureERROR}");
                     } else {
                       console.log(dom.documentElement.nodeName);
                       s.innerHTML = prevText;
+                      conn.send("#{secureOK}");
+                      green = (green + 125) % 256;
+                      document.getElementById("led_g").style.color = `rgb(0,${green},0)`;
+                      document.getElementById("led_r").style.color = "black";
                     }
-                    green = (green + 125) % 256;
-                    document.getElementById("led_g").style.color = `rgb(0,${green},0)`;
-                    document.getElementById("led_r").style.color = "black";
-                    conn.send("#{secureOK}");
                   } else {
                     console.log("ERROR patching");
                     document.getElementById("led_r").style.color = "red";
