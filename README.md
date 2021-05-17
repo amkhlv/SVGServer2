@@ -14,30 +14,20 @@ Does not require installation on the receiving end.
 	* On POSIX systems, this is usually `curl -sSL https://get.haskellstack.org/ | sh`
 2. Install GHC: `stack setup`
 3. Build libraries: `stack build`
+4. Copy executable: `stack install`
 
-### Copy executable:
+### Dart setup
 
-    stack install
+This is needed for [diff-match-patch](https://github.com/google/diff-match-patch)
 
-### C++ setup
+First [install Dart](https://dart.dev/get-dart)
 
-First we need to get diff-match-patch submodule:
+Then:
 
-    git submodule init
-    git submodule update
+    cd dart
+    ./build.sh
 
-First install build tools. For example, on Debian, as root:
-
-    aptitude install qt4-qmake libqt4-dev
-
-then build:
-
-    mkdir build
-    cd build
-    qmake -qt=qt4  -makefile ../compute-patch-to/
-    make
-
-The resulting executable `compute-patch-to` should be copied somewere; 
+This will create the executable `dartdiff`. It should be copied somewere; 
 its location should be put in `common.xml` under `<diffprog>`
 (see [Configuration files](#configuration-files))
 
@@ -99,7 +89,7 @@ Sample configuration files:
       <site>andreimikhailov.com</site>
       <GoogleClientID>■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■</GoogleClientID>
       <GoogleClientSecret>■■■■■■■■■■■■■■■■■■■■■■■■■■■</GoogleClientSecret>
-      <diffprog>/usr/local/lib/amkhlv/compute-patch-to</diffprog>
+      <diffprog>/usr/local/lib/amkhlv/dartdiff</diffprog>
       <cert>/home/www-data/svgserver2/certificate.pem</cert>
       <key>/home/www-data/svgserver2/key.pem</key>
     </config>
