@@ -8,9 +8,7 @@ import Data.Map
 
 
 data CommonCfg = CommonCfg
-  { proto :: String
-  , site  :: String
-  , googleId :: String
+  { googleId :: String
   , googleSecret :: String
   , diffProg     :: String
   , cert :: String
@@ -18,7 +16,9 @@ data CommonCfg = CommonCfg
   } deriving (Show, Eq)
 
 data InstanceCfg = InstanceCfg
-  { remotePort :: Int
+  { proto :: String 
+  , site :: String
+  , remotePort :: Int
   , urlPath :: String
   , localPort  :: Int
   , dir :: String
@@ -31,12 +31,10 @@ instance XmlPickler CommonCfg where xpickle = xpCommonCfg
 xpCommonCfg :: PU CommonCfg
 xpCommonCfg =
   xpElem "config" $
-  xpWrap (\((h,u,i,s,d,c,k)) -> CommonCfg h u i s d c k,
+  xpWrap (\(i,s,d,c,k) -> CommonCfg i s d c k,
            \cf ->
-             (proto cf, site cf, googleId cf, googleSecret cf, diffProg cf, cert cf, key cf)) $
-  xp7Tuple
-  (xpElem "proto" xpText)
-  (xpElem "site" xpText)
+             (googleId cf, googleSecret cf, diffProg cf, cert cf, key cf)) $
+  xp5Tuple
   (xpElem "GoogleClientID" xpText)
   (xpElem "GoogleClientSecret" xpText)
   (xpElem "diffprog" xpText)
@@ -47,10 +45,12 @@ instance XmlPickler InstanceCfg where xpickle = xpInstanceCfg
 xpInstanceCfg :: PU InstanceCfg
 xpInstanceCfg =
   xpElem "config" $
-  xpWrap (\((rp, up, lp, d, p, u, l)) -> InstanceCfg rp up lp d p u l ,
+  xpWrap (\(pr, st, rp, up, lp, d, p, u, l) -> InstanceCfg pr st rp up lp d p u l ,
            \cf ->
-             (remotePort cf, urlPath cf, localPort cf, dir cf, isPublic cf, users cf, logFile cf)) $
-  xp7Tuple
+             (proto cf, site cf, remotePort cf, urlPath cf, localPort cf, dir cf, isPublic cf, users cf, logFile cf)) $
+  xp9Tuple
+  (xpElem "proto" xpText)
+  (xpElem "site" xpText)
   (xpElem "remotePort" xpInt)
   (xpElem "urlPath" xpText)
   (xpElem "localPort" xpInt)  

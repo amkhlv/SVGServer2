@@ -85,8 +85,6 @@ Sample configuration files:
 ### common.xml
 
     <config>
-      <proto>https</proto>
-      <site>andreimikhailov.com</site>
       <GoogleClientID>■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■</GoogleClientID>
       <GoogleClientSecret>■■■■■■■■■■■■■■■■■■■■■■■■■■■</GoogleClientSecret>
       <diffprog>/usr/local/lib/amkhlv/dartdiff</diffprog>
@@ -97,6 +95,8 @@ Sample configuration files:
 ### instance.xml
 
     <config>
+      <proto>https</proto>
+      <site>andreimikhailov.com</site>
       <remotePort>443</remotePort>
       <urlPath>/lecture</urlPath>
       <localPort>11111</localPort>

@@ -40,8 +40,8 @@ main = do
   man <- newManager
   let tls = tlsSettings (cert cfgComm) (key cfgComm)
   a <- toWaiApp (App {
-                    serverProto = proto cfgComm,
-                    serverSite = site cfgComm,
+                    serverProto = proto cfgInst,
+                    serverSite = site cfgInst,
                     serverPort = remotePort cfgInst,
                     serverURLPath = urlPath cfgInst,
                     clientId = pack $ googleId cfgComm,
